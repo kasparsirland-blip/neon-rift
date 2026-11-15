@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>NEON RIFT</title>
+<style>
+body {
+  background:#080618;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+}
+h1 {color:#00ffff;text-shadow:0 0 20px cyan}
+canvas {
+  background:#14102e;
+  border:2px solid #a044ff;
+  max-width:95vw;
+}
+button {
+  padding:12px 30px;
+  background:#873cff;
+  color:white;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+<h1>⚡ NEON RIFT ⚡</h1>
+<p id="score">Score: 0</p>
+<canvas id="game" width="480" height="600"></canvas>
+<p><button onclick="start()">START GAME</button></p>
+<p>Move with mouse or arrow keys</p>
+<script>
+const c=document.getElementById("game");
+const ctx=c.getContext("2d");
+let paddle,ball,blocks,score,playing=false;
+let frame=null,left=false,right=false;
+
+function reset(){
+ paddle={x:190,y:560,w:100,h:12};
+ ball={x:240,y:400,dx:3,dy:-4,r:8};
+ score=0;
+ blocks=[];
+ for(let y=0;y<5;y++)
+ for(let x=0;x<8;x++)
+ blocks.push({x:14+x*58,y:60+y*30,alive:true});
+ document.getElementById("score").textContent="Score: 0";
+}
+function start(){
+ if(frame!==null)cancelAnimationFrame(frame);
+ reset();
+ playing=true;
+ loop();
+}
+function draw(){
+ ctx.clearRect(0,0,480,600);
+ ctx.shadowBlur=18;
+ ctx.shadowColor="cyan";
+ ctx.fillStyle="cyan";
+ ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+ ctx.shadowColor="#ff00ff";
+ ctx.fillStyle="#ff00ff";
+ ctx.beginPath();
+ ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+ ctx.fill();
+ ctx.fillStyle="#9944ff";
+ for(const b of blocks)
+ if(b.alive)ctx.fillRect(b.x,b.y,50,18);
+ ctx.shadowBlur=0;
+}
+function update(){
+ if(left)paddle.x-=6;
+ if(right)paddle.x+=6;
+ paddle.x=Math.max(0,Math.min(380,paddle.x));
+ let previousY=ball.y;
+ ball.x+=ball.dx;
+ ball.y+=ball.dy;
+ if(ball.x<8){ball.x=8;ball.dx=Math.abs(ball.dx);}
+ if(ball.x>472){ball.x=472;ball.dx=-Math.abs(ball.dx);}
+ if(ball.y<8){ball.y=8;ball.dy=Math.abs(ball.dy);}
+ if(ball.dy>0&&previousY+8<=paddle.y&&
+ ball.y+8>=paddle.y&&ball.x>=paddle.x&&
+ ball.x<=paddle.x+100){
+ ball.dy=-Math.abs(ball.dy);
+ ball.dx=(ball.x-paddle.x-50)/12;
+ }
+ for(const b of blocks){
+ if(b.alive&&ball.x+8>b.x&&ball.x-8<b.x+50&&
+ ball.y+8>b.y&&ball.y-8<b.y+18){
+ b.alive=false;
+ ball.dy*=-1;
+ score+=10;
+ document.getElementById("score").textContent="Score: "+score;
+ break;
+ }
+ }
+ if(ball.y>608){
+ playing=false;
+ setTimeout(()=>alert("GAME OVER! Score: "+score),20);
+ }
+ if(blocks.every(b=>!b.alive)){
+ playing=false;
+ setTimeout(()=>alert("YOU WIN!"),20);
+ }
+}
+function loop(){
+ update();
+ draw();
+ if(playing)frame=requestAnimationFrame(loop);
+ else frame=null;
+}
+c.addEventListener("mousemove",e=>{
+ const r=c.getBoundingClientRect();
+ paddle.x=Math.max(0,Math.min(380,
+ (e.clientX-r.left)*480/r.width-50));
+});
+document.addEventListener("keydown",e=>{
+ if(e.key==="ArrowLeft"){left=true;e.preventDefault();}
+ if(e.key==="ArrowRight"){right=true;e.preventDefault();}
+});
+document.addEventListener("keyup",e=>{
+ if(e.key==="ArrowLeft")left=false;
+ if(e.key==="ArrowRight")right=false;
+});
+reset();
+draw();
+</script>
+</body>
+</html>
